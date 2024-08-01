@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - SyncTest
     paths:
       - 'eng/Versions.props'
 
