@@ -63,7 +63,6 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const { context, github } = require('@actions/github');
           const newBranch = 'update-msbuild-version-for-analyzer-template';
           const baseBranch = 'main';
           const title = 'Update MicrosoftBuildVersion in analyzer template';
