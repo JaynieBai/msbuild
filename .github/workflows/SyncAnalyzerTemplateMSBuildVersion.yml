@@ -67,46 +67,72 @@ jobs:
           const baseBranch = 'main';
           const title = 'Update MicrosoftBuildVersion in analyzer template';
           const body = '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.';
-          
-          // Get the current commit SHA
-          const { data: refData } = await github.rest.git.getRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: `heads/${context.ref.replace('refs/heads/', '')}`,
-          });
-
-          // Create a new commit
-          const { data: commitData } = await github.rest.git.createCommit({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            message: 'Update MicrosoftBuildVersion in analyzer template',
-            tree: refData.object.sha,
-            parents: [context.sha],
-              
-          });
-
-          // Update the reference to point to the new commit
-          await github.rest.git.updateRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: `heads/${context.ref.replace('refs/heads/', '')}`,
-            sha: commitData.sha,
-          });
-          
-          // Create a new branch
-          await github.rest.git.createRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: `refs/heads/${newBranch}`,
-            sha: context.sha,
-          });
-
-          // Create a pull request
-          await github.rest.pulls.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: title,
-            head: newBranch,
-            base: baseBranch,
-            body: body,
-          });
+    
+          // Helper function to get the latest commit
+          async function getLatestCommit() {
+            const { data: refData } = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${context.ref.replace('refs/heads/', '')}`,
+            });
+            const commitSHA = refData.object.sha;
+    
+            const { data: commitData } = await github.rest.git.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: commitSHA,
+            });
+    
+            return commitData;
+          }
+    
+          // Helper function to create a new commit
+          async function createNewCommit(treeSHA) {
+            const { data: commitData } = await github.rest.git.createCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              message: 'Update MicrosoftBuildVersion in analyzer template',
+              tree: treeSHA,
+              parents: [context.sha],
+            });
+            return commitData.sha;
+          }
+    
+          // Helper function to update the reference to point to the new commit
+          async function updateRef(sha) {
+            await github.rest.git.updateRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${context.ref.replace('refs/heads/', '')}`,
+              sha: sha,
+            });
+          }
+    
+          // Helper function to create a new branch
+          async function createNewBranch(sha) {
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/heads/${newBranch}`,
+              sha: sha,
+            });
+          }
+    
+          // Helper function to create a pull request
+          async function createPullRequest() {
+            await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              head: newBranch,
+              base: baseBranch,
+              body: body,
+            });
+          }
+    
+          // Main execution
+          const latestCommit = await getLatestCommit();
+          const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
+          await updateRef(newCommitSHA);
+          await createNewBranch(newCommitSHA);
+          await createPullRequest();
