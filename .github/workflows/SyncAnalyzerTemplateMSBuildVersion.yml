@@ -64,7 +64,7 @@ jobs:
       with:
         script: |
           const getOctokit = require('@actions/github');
-          const github = getOctokit(process.env.GITHUB_TOKEN);
+          const octokit = getOctokit(process.env.GITHUB_TOKEN);
 
           const newBranch = 'update-msbuild-version-for-analyzer-template';
           const baseBranch = 'main';
@@ -72,14 +72,14 @@ jobs:
           const body = '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.';
           
           // Get the current commit SHA
-          const { data: refData } = await github.rest.git.getRef({
+          const { data: refData } = await octokit.rest.git.getRef({
             owner: context.repo.owner,
             repo: context.repo.repo,
             ref: `heads/${context.ref.replace('refs/heads/', '')}`,
           });
 
           // Create a new commit
-          const { data: commitData } = await github.rest.git.createCommit({
+          const { data: commitData } = await octokit.rest.git.createCommit({
             owner: context.repo.owner,
             repo: context.repo.repo,
             message: 'Update MicrosoftBuildVersion in analyzer template',
@@ -89,7 +89,7 @@ jobs:
           });
 
           // Update the reference to point to the new commit
-          await github.rest.git.updateRef({
+          await octokit.rest.git.updateRef({
             owner: context.repo.owner,
             repo: context.repo.repo,
             ref: `heads/${context.ref.replace('refs/heads/', '')}`,
@@ -97,7 +97,7 @@ jobs:
           });
           
           // Create a new branch
-          await github.rest.git.createRef({
+          await octokit.rest.git.createRef({
             owner: context.repo.owner,
             repo: context.repo.repo,
             ref: `refs/heads/${newBranch}`,
@@ -105,7 +105,7 @@ jobs:
           });
 
           // Create a pull request
-          await github.rest.pulls.create({
+          await octokit.rest.pulls.create({
             owner: context.repo.owner,
             repo: context.repo.repo,
             title: title,
