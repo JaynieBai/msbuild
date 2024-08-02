@@ -159,8 +159,6 @@ jobs:
           try {
             const latestCommit = await getLatestCommit();
             const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
-            await updateRef(newCommitSHA);
-            await createNewBranch(newCommitSHA);
             // Check if a pull request already exists
             const { data: pullRequests } = await github.rest.pulls.list({
               owner: context.repo.owner,
@@ -168,12 +166,12 @@ jobs:
               head: `${context.repo.owner}:${newBranch}`,
               state: 'open',
             });
-    
+          
             if (pullRequests.length === 0) {
+              await createNewBranch(newCommitSHA);
               await createPullRequest();
             } else {
-              core.info(`Pull request already exists for branch ${newBranch}.`);
-              // Push the new commit to the existing branch
+              core.info(`Pull request already exists for branch ${newBranch}. Adding new commit to the existing pull request.`);
               await updateRef(newCommitSHA);
             }
           } catch (error) {
