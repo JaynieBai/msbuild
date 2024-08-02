@@ -69,6 +69,7 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
+         const fs = require('fs');  // Import the fs module
          const newBranch = 'update-msbuild-version-for-analyzer-template';
          const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
          const commitMessage = 'Update MicrosoftBuildVersion to $versionPrefix';
