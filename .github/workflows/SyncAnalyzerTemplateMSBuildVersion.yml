@@ -54,6 +54,15 @@ jobs:
             # Write the updated JSON back to the file
             Set-Content -Path $jsonFilePath -Value $jsonString
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
+
+            # Stage the changes
+            git add $xmlFilePath $jsonFilePath
+    
+            # Commit the changes
+            git commit -m "Update MicrosoftBuildVersion to $versionPrefix"
+    
+            # Push the changes to the new branch
+            git push origin update-msbuild-version-for-analyzer-template
         }
         catch {
             Write-Error "An error occurred: $_"
@@ -159,7 +168,6 @@ jobs:
           
           // Main execution
           try {
-            const latestCommit = await getLatestCommit();
             // Check if a pull request already exists
             const { data: pullRequests } = await github.rest.pulls.list({
               owner: context.repo.owner,
@@ -169,14 +177,9 @@ jobs:
             });
           
             if (pullRequests.length === 0) {
-              await createNewBranch(latestCommit.sha);
-              const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
-              await updateRef(newBranch, newCommitSHA);
               await createPullRequest();
             } else {
-              core.info(`Pull request already exists for branch ${newBranch}. Adding new commit to the existing pull request.`);
-              const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
-              await updateRef(newBranch, newCommitSHA);
+              core.info(`Pull request already exists for branch ${newBranch});
             }
           } catch (error) {
             core.setFailed(`Failed to complete the process: ${error.message}`);
