@@ -173,6 +173,8 @@ jobs:
               await createPullRequest();
             } else {
               core.info(`Pull request already exists for branch ${newBranch}.`);
+              // Push the new commit to the existing branch
+              await updateRef(newCommitSHA);
             }
           } catch (error) {
             core.setFailed(`Failed to complete the process: ${error.message}`);
