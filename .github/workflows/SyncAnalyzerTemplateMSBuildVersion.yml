@@ -158,6 +158,7 @@ jobs:
           // Main execution
           try {
             const latestCommit = await getLatestCommit();
+            latestCommit;
             const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
             // Check if a pull request already exists
             const { data: pullRequests } = await github.rest.pulls.list({
