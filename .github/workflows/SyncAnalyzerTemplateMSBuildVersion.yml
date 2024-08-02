@@ -161,7 +161,19 @@ jobs:
             const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
             await updateRef(newCommitSHA);
             await createNewBranch(newCommitSHA);
-            await createPullRequest();
+            // Check if a pull request already exists
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branchName}`,
+              state: 'open',
+            });
+    
+            if (pullRequests.length === 0) {
+              await createPullRequest();
+            } else {
+              core.info(`Pull request already exists for branch ${branchName}.`);
+            }
           } catch (error) {
             core.setFailed(`Failed to complete the process: ${error.message}`);
           }
