@@ -56,7 +56,7 @@ jobs:
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
             # Stage the changes
-            git add $xmlFilePath $jsonFilePath
+            git add $jsonFilePath
     
             # Commit the changes
             git commit -m "Update MicrosoftBuildVersion to $versionPrefix"
