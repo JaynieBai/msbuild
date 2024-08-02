@@ -22,6 +22,7 @@ jobs:
       run: echo "##[set-output name=baseBranch;]${{ github.ref_name }}"
 
     - name: Update analyzer template version with version from Versions.props
+      id: update-version
       shell: pwsh
       run: |
         try {
@@ -60,6 +61,9 @@ jobs:
             # Write the updated JSON back to the file
             Set-Content -Path $jsonFilePath -Value $jsonString
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
+
+            # Set the versionPrefix as an output
+            echo "##[set-output name=versionPrefix;]$versionPrefix"
         }
         catch {
             Write-Error "An error occurred: $_"
@@ -72,7 +76,8 @@ jobs:
           const fs = require('fs');  // Import the fs module
           const newBranch = 'update-msbuild-version-for-analyzer-template';
           const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
-          const commitMessage = 'Update MicrosoftBuildVersion to $versionPrefix';
+          const versionPrefix = '${{ steps.update-version.outputs.versionPrefix }}';
+          const commitMessage = 'Update MicrosoftBuildVersion to ${versionPrefix}';
           const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
           const fileContent = fs.readFileSync(filePath, 'utf8');
           
