@@ -133,6 +133,7 @@ jobs:
               repo: context.repo.repo,
               ref: `heads/${newBranch}`,
               sha: commitData.sha,
+              force: true,  // Force push to handle non-fast-forward updates
             });
           }  
     
