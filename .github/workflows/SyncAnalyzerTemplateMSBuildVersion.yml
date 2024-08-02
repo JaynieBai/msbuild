@@ -69,15 +69,15 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-         const fs = require('fs');  // Import the fs module
-         const newBranch = 'update-msbuild-version-for-analyzer-template';
-         const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
-         const commitMessage = 'Update MicrosoftBuildVersion to $versionPrefix';
-         const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
-         const fileContent = fs.readFileSync(filePath, 'utf8');
+          const fs = require('fs');  // Import the fs module
+          const newBranch = 'update-msbuild-version-for-analyzer-template';
+          const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
+          const commitMessage = 'Update MicrosoftBuildVersion to $versionPrefix';
+          const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
+          const fileContent = fs.readFileSync(filePath, 'utf8');
           
-         // Helper function to check if a branch exists
-         async function branchExists(branch) {
+          // Helper function to check if a branch exists
+          async function branchExists(branch) {
             try {
               await github.rest.git.getRef({
                 owner: context.repo.owner,
@@ -94,13 +94,7 @@ jobs:
           }
           
           // Helper function to create a new branch
-          async function createBranch() {
-            const { data: refData } = await github.rest.git.getRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `heads/${baseBranch}`,
-            });
-            
+          async function createBranch(refData) {
             const newRef = `refs/heads/${newBranch}`;
             await github.rest.git.createRef({
               owner: context.repo.owner,
@@ -111,7 +105,7 @@ jobs:
           }
           
           // Helper function to commit changes
-          async function commitChanges() {
+          async function commitChanges(refData) {
             const { data: blobData } = await github.rest.git.createBlob({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -134,17 +128,17 @@ jobs:
               sha: commitData.sha,
             });
           }
-
+    
           // Helper function to create a pull request
           async function createPullRequest() {
             try {
               await github.rest.pulls.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: title,
+                title: 'Update MicrosoftBuildVersion',
                 head: newBranch,
                 base: baseBranch,
-                body: body,
+                body: 'This PR updates the MicrosoftBuildVersion in the analyzer template.',
               });
             } catch (error) {
               core.setFailed(`Failed to create a pull request: ${error.message}`);
@@ -153,13 +147,19 @@ jobs:
           
           // Main execution
           try {
-            const branchExists = await branchExists(newBranch);
-            if (!branchExists) {
-              await createBranch();
+            const branchExistsResult = await branchExists(newBranch);
+            const { data: refData } = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${baseBranch}`,
+            });
+    
+            if (!branchExistsResult) {
+              await createBranch(refData);
             } else {
               core.info(`Branch ${newBranch} already exists`);
             }
-            await commitChanges();
+            await commitChanges(refData);
             
             // Check if a pull request already exists
             const { data: pullRequests } = await github.rest.pulls.list({
@@ -177,3 +177,4 @@ jobs:
           } catch (error) {
             core.setFailed(`Failed to create and push branch: ${error.message}`);
           }
+
