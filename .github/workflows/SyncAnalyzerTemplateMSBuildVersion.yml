@@ -77,7 +77,7 @@ jobs:
           const newBranch = 'update-msbuild-version-for-analyzer-template';
           const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
           const versionPrefix = '${{ steps.update-version.outputs.versionPrefix }}';
-          const commitMessage = 'Update MicrosoftBuildVersion to ${versionPrefix}';
+          const commitMessage = 'Update MicrosoftBuildVersion to $versionPrefix';
           const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
           const fileContent = fs.readFileSync(filePath, 'utf8');
           
