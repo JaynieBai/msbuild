@@ -63,12 +63,12 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const newBranch = 'update-msbuild-version-for-analyzer-template1';
+          const newBranch = 'update-msbuild-version-for-analyzer-template';
           const baseBranch = 'main';
           const title = 'Update MicrosoftBuildVersion in analyzer template';
           const body = '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.';
-          const commitMesasge = 'Update MicrosoftBuildVersion in analyzer template';
-    
+          const commitMessage = 'Update MicrosoftBuildVersion in analyzer template';
+          
           // Helper function to get the latest commit
           async function getLatestCommit() {
             try {
@@ -78,26 +78,28 @@ jobs:
                 ref: `heads/${context.ref.replace('refs/heads/', '')}`,
               });
               const commitSHA = refData.object.sha;
-    
+          
               const { data: commitData } = await github.rest.git.getCommit({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 commit_sha: commitSHA,
               });
-    
+          
+              console.log('Latest Commit:', commitData); // Log the latest commit details
+          
               return commitData;
             } catch (error) {
               core.setFailed(`Failed to get the latest commit: ${error.message}`);
             }
           }
-    
+          
           // Helper function to create a new commit
           async function createNewCommit(treeSHA) {
             try {
               const { data: commitData } = await github.rest.git.createCommit({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                message: commitMesasge,
+                message: commitMessage,
                 tree: treeSHA,
                 parents: [context.sha],
               });
@@ -106,21 +108,21 @@ jobs:
               core.setFailed(`Failed to create a new commit: ${error.message}`);
             }
           }
-    
+          
           // Helper function to update the reference to point to the new commit
-          async function updateRef(sha) {
+          async function updateRef(branch, sha) {
             try {
               await github.rest.git.updateRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: `heads/${context.ref.replace('refs/heads/', '')}`,
+                ref: `heads/${branch}`,
                 sha: sha,
               });
             } catch (error) {
               core.setFailed(`Failed to update the reference: ${error.message}`);
             }
           }
-    
+          
           // Helper function to create a new branch
           async function createNewBranch(sha) {
             try {
@@ -138,7 +140,7 @@ jobs:
               }
             }
           }
-    
+          
           // Helper function to create a pull request
           async function createPullRequest() {
             try {
@@ -154,12 +156,10 @@ jobs:
               core.setFailed(`Failed to create a pull request: ${error.message}`);
             }
           }
-    
+          
           // Main execution
           try {
             const latestCommit = await getLatestCommit();
-            console.log('Latest Commit:', latestCommit); // Log the latest commit details
-            const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
             // Check if a pull request already exists
             const { data: pullRequests } = await github.rest.pulls.list({
               owner: context.repo.owner,
@@ -169,12 +169,16 @@ jobs:
             });
           
             if (pullRequests.length === 0) {
-              await createNewBranch(newCommitSHA);
+              await createNewBranch(latestCommit.sha);
+              const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
+              await updateRef(newBranch, newCommitSHA);
               await createPullRequest();
             } else {
               core.info(`Pull request already exists for branch ${newBranch}. Adding new commit to the existing pull request.`);
-              await updateRef(newCommitSHA);
+              const newCommitSHA = await createNewCommit(latestCommit.tree.sha);
+              await updateRef(newBranch, newCommitSHA);
             }
           } catch (error) {
             core.setFailed(`Failed to complete the process: ${error.message}`);
           }
+
