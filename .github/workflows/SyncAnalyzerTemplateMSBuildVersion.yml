@@ -80,7 +80,7 @@ jobs:
           const commitMessage = `Update MicrosoftBuildVersion to ${versionPrefix}`;
           const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
           const fileContent = fs.readFileSync(filePath, 'utf8');
-          console.log("GitHub Context Payload:", JSON.stringify(github.context.payload, null, 2));
+          console.log("GitHub Context Payload:", JSON.stringify(context.payload, null, 2));
           // Configure git
           await exec.exec(`git config user.name "github-actions"`);
           await exec.exec(`git config user.email "github-actions@github.com"`);
