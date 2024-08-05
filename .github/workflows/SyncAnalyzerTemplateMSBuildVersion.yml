@@ -37,7 +37,7 @@ jobs:
 
             # Load and parse the XML content
             [xml]$xmlContent = Get-Content -Path $xmlFilePath
-            $versionPrefix = [string]$xmlContent.Project.PropertyGroup.VersionPrefix
+            $versionPrefix = [string]$xmlContent.Project.PropertyGroup.VersionPrefix.Trim()
 
             # Validate the versionPrefix
             if ([string]::IsNullOrWhiteSpace($versionPrefix)) {
@@ -53,7 +53,7 @@ jobs:
             $jsonContent = Get-Content -Path $jsonFilePath -Raw | ConvertFrom-Json
 
             # Update the defaultValue of MicrosoftBuildVersion in the JSON template
-            $jsonContent.symbols.MicrosoftBuildVersion.defaultValue = $versionPrefix.Trim()
+            $jsonContent.symbols.MicrosoftBuildVersion.defaultValue = $versionPrefix
 
             # Convert the JSON content back to a string
             $jsonString = $jsonContent | ConvertTo-Json -Depth 10
@@ -63,8 +63,8 @@ jobs:
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
             # Set the versionPrefix and template filePath as an output
-            echo "versionPrefix=$versionPrefix" >> $GITHUB_ENV
-            echo "jsonFilePath=$jsonFilePath" >> $GITHUB_ENV
+            echo "versionPrefix=${versionPrefix}" >> $GITHUB_ENV
+            echo "jsonFilePath=${jsonFilePath}" >> $GITHUB_ENV
             
         }
         catch {
