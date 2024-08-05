@@ -19,7 +19,7 @@ jobs:
 
     - name: Set baseBranch variable
       id: vars
-      run: echo "##[set-output name=baseBranch;]${{ github.ref_name }}"
+      run: echo "baseBranch=${{ github.ref_name }}" >> $GITHUB_ENV
 
     - name: Update analyzer template version with version from Versions.props
       id: update-version
@@ -63,8 +63,8 @@ jobs:
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
             # Set the versionPrefix  and template filePath as an output
-            echo "##[set-output name=versionPrefix;]$versionPrefix"
-            echo "##[set-output name=jsonFilePath;]$jsonFilePath"
+            echo "versionPrefix=$versionPrefix" >> $GITHUB_ENV
+            echo "jsonFilePath=$jsonFilePath" >> $GITHUB_ENV
             
         }
         catch {
@@ -75,63 +75,55 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
-          const versionPrefix = '${{ steps.update-version.outputs.versionPrefix }}';
-          const filePath = '${{ steps.update-version.outputs.jsonFilePath }}';
+          const baseBranch = process.env.baseBranch;
+          const versionPrefix = process.env.versionPrefix;
+          const filePath = process.env.jsonFilePath;
           const newBranch = `${baseBranch}-update-msbuild-version-for-analyzer-template`;
           const commitMessage = `Update MicrosoftBuildVersion to ${versionPrefix}`;
           const prBody = '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.';
           const prTitle = 'Update MicrosoftBuildVersion in analyzer template';
 
-          console.log("GitHub Context Payload:", JSON.stringify(context.payload, null, 2));
-          // Configure git
-          await exec.exec(`git config user.name "github-actions"`);
-          await exec.exec(`git config user.email "github-actions@github.com"`);
+          // Main execution
+          (async () => {
+            try {
+              // Configure git
+              await exec.exec(`git config user.name "github-actions"`);
+              await exec.exec(`git config user.email "github-actions@github.com"`);
           
-          // Create and switch to the new branch
-          await exec.exec('git', ['checkout', '-b', newBranch]);
+              // Create and switch to the new branch
+              await exec.exec('git', ['checkout', '-b', newBranch]);
           
-          // Skip opening PR if the branch already exists on the origin remote
-          let should_open_pull_request = true;
-          try {
-            await exec.exec(`git ls-remote --exit-code --heads origin ${newBranch}`);
-            should_open_pull_request = false;
-          } catch {}
+              // Skip opening PR if the branch already exists on the origin remote
+              let should_open_pull_request = true;
+              try {
+                await exec.exec(`git ls-remote --exit-code --heads origin ${newBranch}`);
+                should_open_pull_request = false;
+              } catch {}
 
-          // Log the current Git status
-          let git_status_output = '';
-          await exec.exec('git status', [], {
-            listeners: {
-              stdout: (data) => { git_status_output += data.toString(); },
-              stderr: (data) => { git_status_output += data.toString(); }
+              // Stage the changes
+              await exec.exec(`git add ${filePath}`);
+      
+              // Commit the changes
+              await exec.exec(`git commit -m "${commitMessage}"`);
+      
+              // Push the temp branch to the repository
+              await exec.exec(`git push --force --set-upstream origin HEAD:${newBranch}`);
+
+              if (!should_open_pull_request) {
+                console.log("the PR already exists, skipping opening a new PR.");
+                return;
+              }
+
+              // Create the PR
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: prTitle,
+                body: prBody,
+                head: newBranch,
+                base: baseBranch
+              });
+            } catch (error) {
+              core.setFailed(error)
             }
-          });
-          console.log("Git Status:\n", git_status_output);
-
-          // Stage the changes
-          await exec.exec(`git add ${filePath}`);
-      
-          // Commit the changes
-          await exec.exec(`git commit -m "${commitMessage}"`);
-      
-          // Push the temp branch to the repository
-          await exec.exec(`git push --force --set-upstream origin HEAD:${newBranch}`);
-
-          if (!should_open_pull_request) {
-              console.log("Backport temp branch already exists, skipping opening a PR.");
-              return;
-          }
-
-          // Create the PR
-          await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: prTitle,
-              body: prBody,
-              head: newBranch,
-              base: baseBranch
-            });
-
-
-
-
+          })();
