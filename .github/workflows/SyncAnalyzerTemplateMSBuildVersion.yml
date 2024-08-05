@@ -95,3 +95,15 @@ jobs:
             should_open_pull_request = false;
           } catch {}
 
+          // Log the current Git status
+          let git_status_output = '';
+          await exec.exec('git status', [], {
+            listeners: {
+              stdout: (data) => { git_status_output += data.toString(); },
+              stderr: (data) => { git_status_output += data.toString(); }
+            }
+          });
+          console.log("Git Status:\n", git_status_output);
+
+
+
