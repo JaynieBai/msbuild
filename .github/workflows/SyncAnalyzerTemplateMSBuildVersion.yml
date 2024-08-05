@@ -74,7 +74,7 @@ jobs:
       with:
         script: |
           const fs = require('fs');  // Import the fs module
-          const newBranch = 'update-msbuild-version-for-analyzer-template';
+          const newBranch = 'update-msbuild-version-for-analyzer-template2';
           const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
           const versionPrefix = '${{ steps.update-version.outputs.versionPrefix }}';
           const commitMessage = `Update MicrosoftBuildVersion to ${versionPrefix}`;
@@ -82,8 +82,7 @@ jobs:
           const fileContent = fs.readFileSync(filePath, 'utf8');
     
           // Main execution
-          try {
-            // configure git
+          // configure git
             await exec.exec(`git config user.name "github-actions"`);
             await exec.exec(`git config user.email "github-actions@github.com"`);
             
@@ -132,15 +131,12 @@ jobs:
             }
             
             // Create a pull request
-            await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: 'Update MicrosoftBuildVersion in analyzer template',
-              head: newBranch,
-              base: baseBranch,
-              body: '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.',
-            });
-          } catch (error) {
-            core.setFailed(`Failed to create and push branch: ${error.message}`);
-          }
+            # await github.rest.pulls.create({
+            #   owner: context.repo.owner,
+            #   repo: context.repo.repo,
+            #   title: 'Update MicrosoftBuildVersion in analyzer template',
+            #   head: newBranch,
+            #   base: baseBranch,
+            #   body: '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.',
+            # });
 
