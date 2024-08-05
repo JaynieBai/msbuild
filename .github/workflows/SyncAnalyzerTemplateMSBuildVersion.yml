@@ -71,6 +71,12 @@ jobs:
             Write-Error "An error occurred: $_"
         }
 
+    - name: Print environment variables
+      run: |
+        echo "baseBranch: ${{ env.baseBranch }}"
+        echo "versionPrefix: ${{ env.versionPrefix }}"
+        echo "jsonFilePath: ${{ env.jsonFilePath }}"
+    
     - name: Create Pull Request
       uses: actions/github-script@v7
       with:
