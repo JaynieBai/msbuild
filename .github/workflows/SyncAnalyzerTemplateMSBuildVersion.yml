@@ -62,7 +62,7 @@ jobs:
             Set-Content -Path $jsonFilePath -Value $jsonString
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
-            # Set the versionPrefix  and template filePath as an output
+            # Set the versionPrefix and template filePath as an output
             echo "versionPrefix=$versionPrefix" >> $GITHUB_ENV
             echo "jsonFilePath=$jsonFilePath" >> $GITHUB_ENV
             
@@ -82,48 +82,70 @@ jobs:
           const commitMessage = `Update MicrosoftBuildVersion to ${versionPrefix}`;
           const prBody = '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.';
           const prTitle = 'Update MicrosoftBuildVersion in analyzer template';
-
+          
           // Main execution
           (async () => {
             try {
               // Configure git
-              await exec.exec(`git config user.name "github-actions"`);
-              await exec.exec(`git config user.email "github-actions@github.com"`);
+              await configureGit();
           
               // Create and switch to the new branch
-              await exec.exec('git', ['checkout', '-b', newBranch]);
+              await createAndSwitchBranch(newBranch);
           
-              // Skip opening PR if the branch already exists on the origin remote
-              let should_open_pull_request = true;
-              try {
-                await exec.exec(`git ls-remote --exit-code --heads origin ${newBranch}`);
-                should_open_pull_request = false;
-              } catch {}
-
-              // Stage the changes
-              await exec.exec(`git add ${filePath}`);
-      
-              // Commit the changes
-              await exec.exec(`git commit -m "${commitMessage}"`);
-      
-              // Push the temp branch to the repository
-              await exec.exec(`git push --force --set-upstream origin HEAD:${newBranch}`);
-
-              if (!should_open_pull_request) {
-                console.log("the PR already exists, skipping opening a new PR.");
-                return;
+              // Check if the branch already exists on the remote
+              const shouldOpenPullRequest = await checkBranchExists(newBranch);
+          
+              // Stage and commit the changes
+              await stageAndCommitChanges(filePath, commitMessage);
+          
+              // Push the new branch to the repository
+              await pushBranch(newBranch);
+          
+              // Create the pull request if needed
+              if (shouldOpenPullRequest) {
+                await createPullRequest(baseBranch, newBranch, prTitle, prBody);
+              } else {
+                console.log("The PR already exists, skipping opening a new PR.");
               }
-
-              // Create the PR
-              await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: prTitle,
-                body: prBody,
-                head: newBranch,
-                base: baseBranch
-              });
             } catch (error) {
-              core.setFailed(error)
+              core.setFailed(error);
             }
           })();
+          
+          async function configureGit() {
+            await exec.exec(`git config user.name "github-actions"`);
+            await exec.exec(`git config user.email "github-actions@github.com"`);
+          }
+          
+          async function createAndSwitchBranch(branch) {
+            await exec.exec('git', ['checkout', '-b', branch]);
+          }
+          
+          async function checkBranchExists(branch) {
+            try {
+              await exec.exec(`git ls-remote --exit-code --heads origin ${branch}`);
+              return false;
+            } catch {
+              return true;
+            }
+          }
+          
+          async function stageAndCommitChanges(filePath, commitMessage) {
+            await exec.exec(`git add ${filePath}`);
+            await exec.exec(`git commit -m "${commitMessage}"`);
+          }
+          
+          async function pushBranch(branch) {
+            await exec.exec(`git push --force --set-upstream origin HEAD:${branch}`);
+          }
+          
+          async function createPullRequest(baseBranch, newBranch, title, body) {
+            await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              head: newBranch,
+              base: baseBranch
+            });
+          }
