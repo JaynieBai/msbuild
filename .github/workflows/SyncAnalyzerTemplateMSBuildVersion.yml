@@ -80,7 +80,7 @@ jobs:
           const commitMessage = `Update MicrosoftBuildVersion to ${versionPrefix}`;
           const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
           const fileContent = fs.readFileSync(filePath, 'utf8');
-    
+          console.log("GitHub Context Payload:", JSON.stringify(github.context.payload, null, 2));
           // Configure git
           await exec.exec(`git config user.name "github-actions"`);
           await exec.exec(`git config user.email "github-actions@github.com"`);
@@ -104,6 +104,30 @@ jobs:
             }
           });
           console.log("Git Status:\n", git_status_output);
+
+          // Stage the changes
+          await exec.exec(`git add ${filePath}`);
+      
+          // Commit the changes
+          await exec.exec(`git commit -m "${commitMessage}"`);
+      
+          // Push the temp branch to the repository
+          await exec.exec(`git push --force --set-upstream origin HEAD:${newBranch}`);
+
+          if (!should_open_pull_request) {
+              console.log("Backport temp branch already exists, skipping opening a PR.");
+              return;
+          }
+
+          // Check if a pull request already exists
+          const { data: pullRequests } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            head: `${context.repo.owner}:${newBranch}`,
+            base: baseBranch,
+            state: 'open',
+          });
+
 
 
 
