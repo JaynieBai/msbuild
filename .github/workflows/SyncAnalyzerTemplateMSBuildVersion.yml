@@ -64,10 +64,10 @@ jobs:
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
             # Set the versionPrefix and template filePath as an output
-            echo "versionPrefix=17.8" >> $GITHUB_ENV
-            echo "jsonFilePath=$jsonFilePath" >> $GITHUB_ENV
-            Write-Output "Extracted VersionPrefix: $versionPrefix"
-            Write-Output "Extracted VersionPrefix: $jsonFilePath"
+            Add-Content -Path $env:GITHUB_ENV -Value "versionPrefix=$versionPrefix"
+            Add-Content -Path $env:GITHUB_ENV -Value "jsonFilePath=$jsonFilePath"
+            Write-Output "Extracted versionPrefix: $versionPrefix"
+            Write-Output "Extracted jsonFilePath: $jsonFilePath"
         }
         catch {
             Write-Error "An error occurred: $_"
