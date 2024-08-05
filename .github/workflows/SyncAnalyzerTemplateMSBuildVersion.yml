@@ -98,37 +98,37 @@ jobs:
                 should_open_pull_request = false;
               } catch {}
           
-              // Download and apply patch
-              await exec.exec(`curl -sSL "${github.context.payload.issue.pull_request.patch_url}" --output changes.patch`);
+              # // Download and apply patch
+              # await exec.exec(`curl -sSL "${github.context.payload.issue.pull_request.patch_url}" --output changes.patch`);
           
-              const git_am_command = "git am --3way --ignore-whitespace --keep-non-patch changes.patch";
-              let git_am_output = `$ ${git_am_command}\n\n`;
-              let git_am_failed = false;
-              try {
-                await exec.exec(git_am_command, [], {
-                  listeners: {
-                    stdout: (data) => { git_am_output += data; },
-                    stderr: (data) => { git_am_output += data; }
-                  }
-                });
-              } catch (error) {
-                git_am_output += error;
-                git_am_failed = true;
-              }
+              # const git_am_command = "git am --3way --ignore-whitespace --keep-non-patch changes.patch";
+              # let git_am_output = `$ ${git_am_command}\n\n`;
+              # let git_am_failed = false;
+              # try {
+              #   await exec.exec(git_am_command, [], {
+              #     listeners: {
+              #       stdout: (data) => { git_am_output += data; },
+              #       stderr: (data) => { git_am_output += data; }
+              #     }
+              #   });
+              # } catch (error) {
+              #   git_am_output += error;
+              #   git_am_failed = true;
+              # }
           
-              if (git_am_failed) {
-                const git_am_failed_body = `@${github.context.payload.comment.user.login} backporting to ${baseBranch} failed, the patch most likely resulted in conflicts:\n\n\`\`\`shell\n${git_am_output}\n\`\`\`\n\nPlease backport manually!`;
-                await github.rest.issues.createComment({
-                  owner: github.context.repo.owner,
-                  repo: github.context.repo.repo,
-                  issue_number: github.context.issue.number,
-                  body: git_am_failed_body
-                });
-                throw new Error("Error: git am failed, most likely due to a merge conflict.");
-              } else {
-                // Push the temp branch to the repository
-                await exec.exec(`git push --force --set-upstream origin HEAD:${newBranch}`);
-              }
+              # if (git_am_failed) {
+              #   const git_am_failed_body = `@${github.context.payload.comment.user.login} backporting to ${baseBranch} failed, the patch most likely resulted in conflicts:\n\n\`\`\`shell\n${git_am_output}\n\`\`\`\n\nPlease backport manually!`;
+              #   await github.rest.issues.createComment({
+              #     owner: github.context.repo.owner,
+              #     repo: github.context.repo.repo,
+              #     issue_number: github.context.issue.number,
+              #     body: git_am_failed_body
+              #   });
+              #   throw new Error("Error: git am failed, most likely due to a merge conflict.");
+              # } else {
+              #   // Push the temp branch to the repository
+              #   await exec.exec(`git push --force --set-upstream origin HEAD:${newBranch}`);
+              # }
             } catch (error) {
               console.error(error);
             }
