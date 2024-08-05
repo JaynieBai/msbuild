@@ -64,10 +64,8 @@ jobs:
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
             # Set the versionPrefix and template filePath as an output
-            $env:versionPrefix = $versionPrefix
-            $env:jsonFilePath = $jsonFilePath
-            echo "versionPrefix=$env:versionPrefix" >> $GITHUB_ENV
-            echo "jsonFilePath=$env:jsonFilePath" >> $GITHUB_ENV
+            echo "versionPrefix=$versionPrefix" >> $GITHUB_ENV
+            echo "jsonFilePath=$jsonFilePath" >> $GITHUB_ENV
             Write-Output "Extracted VersionPrefix: $versionPrefix"
             Write-Output "Extracted VersionPrefix: $jsonFilePath"
         }
@@ -75,11 +73,13 @@ jobs:
             Write-Error "An error occurred: $_"
         }
 
-    - name: Print environment variables
+    - name: Verify environment variables
       run: |
-        echo "baseBranch: ${{ env.baseBranch }}"
-        echo "versionPrefix: ${{ env.versionPrefix }}"
-        echo "jsonFilePath: ${{ env.jsonFilePath }}"
+        echo "versionPrefix: $versionPrefix"
+        echo "jsonFilePath: $jsonFilePath"
+      env:
+        versionPrefix: ${{ env.versionPrefix }}
+        jsonFilePath: ${{ env.jsonFilePath }}
     
     - name: Create Pull Request
       uses: actions/github-script@v7
