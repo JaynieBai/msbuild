@@ -95,7 +95,10 @@ jobs:
             
             // Commit the changes
             await exec.exec('git', ['commit', '-m', commitMessage]);
-            
+
+            // Pull the latest changes from the remote branch
+            await execCommand('git', ['pull', '--rebase', 'origin', newBranch]);
+        
             // Push the new branch to the remote repository
             await exec.exec('git', ['push', 'origin', newBranch]);
             
