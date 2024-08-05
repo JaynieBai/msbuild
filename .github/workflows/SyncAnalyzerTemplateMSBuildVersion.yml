@@ -75,11 +75,8 @@ jobs:
 
     - name: Verify environment variables
       run: |
-        echo "versionPrefix: $versionPrefix"
-        echo "jsonFilePath: $jsonFilePath"
-      env:
-        versionPrefix: ${{ env.versionPrefix }}
-        jsonFilePath: ${{ env.jsonFilePath }}
+        echo "versionPrefix: ${{ env.versionPrefix }}"
+        echo "jsonFilePath: ${{ env.jsonFilePath }}"
     
     - name: Create Pull Request
       uses: actions/github-script@v7
