@@ -73,13 +73,13 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const fs = require('fs');  // Import the fs module
           const newBranch = 'update-msbuild-version-for-analyzer-template2';
           const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
           const versionPrefix = '${{ steps.update-version.outputs.versionPrefix }}';
           const commitMessage = `Update MicrosoftBuildVersion to ${versionPrefix}`;
-          const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
-          const fileContent = fs.readFileSync(filePath, 'utf8');
+          const prBody = '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.';
+          const prTitle = 'Update MicrosoftBuildVersion in analyzer template';
+
           console.log("GitHub Context Payload:", JSON.stringify(context.payload, null, 2));
           // Configure git
           await exec.exec(`git config user.name "github-actions"`);
@@ -119,14 +119,15 @@ jobs:
               return;
           }
 
-          // Check if a pull request already exists
-          const { data: pullRequests } = await github.rest.pulls.list({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            head: `${context.repo.owner}:${newBranch}`,
-            base: baseBranch,
-            state: 'open',
-          });
+          // Create the PR
+          await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: prTitle,
+              body: prBody,
+              head: newBranch,
+              base: baseBranch
+            });
 
 
 
