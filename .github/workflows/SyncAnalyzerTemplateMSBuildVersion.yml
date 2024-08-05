@@ -38,6 +38,7 @@ jobs:
             # Load and parse the XML content
             [xml]$xmlContent = Get-Content -Path $xmlFilePath
             $versionPrefix = [string]$xmlContent.Project.PropertyGroup.VersionPrefix.Trim()
+            $versionPrefix = $versionPrefix.Trim()
 
             # Validate the versionPrefix
             if ([string]::IsNullOrWhiteSpace($versionPrefix)) {
