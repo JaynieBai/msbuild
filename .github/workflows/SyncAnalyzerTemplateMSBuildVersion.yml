@@ -64,7 +64,7 @@ jobs:
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
             # Set the versionPrefix and template filePath as an output
-            $env:versionPrefix = $versionPrefix"
+            $env:versionPrefix = $versionPrefix
             $env:jsonFilePath = $jsonFilePath
             echo "versionPrefix=$env:versionPrefix" >> $GITHUB_ENV
             echo "jsonFilePath=$env:jsonFilePath" >> $GITHUB_ENV
