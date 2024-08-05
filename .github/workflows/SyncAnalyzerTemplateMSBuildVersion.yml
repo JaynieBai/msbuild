@@ -77,117 +77,37 @@ jobs:
           const newBranch = 'update-msbuild-version-for-analyzer-template';
           const baseBranch = '${{ steps.vars.outputs.baseBranch }}';
           const versionPrefix = '${{ steps.update-version.outputs.versionPrefix }}';
-          const commitMessage = 'Update MicrosoftBuildVersion to $versionPrefix';
+          const commitMessage = `Update MicrosoftBuildVersion to ${versionPrefix}`;
           const filePath = 'template_feed/content/Microsoft.AnalyzerTemplate/.template.config/template.json';
           const fileContent = fs.readFileSync(filePath, 'utf8');
-          
-          // Helper function to check if a branch exists
-          async function branchExists(branch) {
-            try {
-              await github.rest.git.getRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: `heads/${branch}`,
-              });
-              return true;
-            } catch (error) {
-              if (error.status === 404) {
-                return false;
-              }
-              throw error;
-            }
-          }
-          
-          // Helper function to create a new branch
-          async function createBranch(refData) {
-            const newRef = `refs/heads/${newBranch}`;
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: newRef,
-              sha: refData.object.sha,
-            });
-          }
-          
-          // Helper function to commit changes
-          async function commitChanges(refData) {
-            const { data: treeData } = await github.rest.git.createTree({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tree: [
-                {
-                  path: filePath,
-                  mode: '100644',
-                  type: 'blob',
-                  content: fileContent,
-                },
-              ],
-              base_tree: refData.object.sha,
-            });
     
-            const { data: commitData } = await github.rest.git.createCommit({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              message: commitMessage,
-              tree: treeData.sha,
-              parents: [refData.object.sha],
-            });
-            
-            await github.rest.git.updateRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `heads/${newBranch}`,
-              sha: commitData.sha,
-              force: true,  // Force push to handle non-fast-forward updates
-            });
-          }  
-    
-          // Helper function to create a pull request
-          async function createPullRequest() {
-            try {
-              await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: 'Update MicrosoftBuildVersion in analyzer template',
-                head: newBranch,
-                base: baseBranch,
-                body: '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.',
-              });
-            } catch (error) {
-              core.setFailed(`Failed to create a pull request: ${error.message}`);
-            }
-          }
-          
           // Main execution
           try {
-            const branchExistsResult = await branchExists(newBranch);
-            const { data: refData } = await github.rest.git.getRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `heads/${baseBranch}`,
-            });
-    
-            if (!branchExistsResult) {
-              await createBranch(refData);
-            } else {
-              core.info(`Branch ${newBranch} already exists`);
-            }
-            await commitChanges(refData);
+            // configure git
+            await exec.exec(`git config user.name "github-actions"`);
+            await exec.exec(`git config user.email "github-actions@github.com"`);
             
-            // Check if a pull request already exists
-            const { data: pullRequests } = await github.rest.pulls.list({
+            // Create and switch to the new branch
+            await exec.exec('git', ['checkout', '-b', newBranch]);
+            
+            // Stage the changes
+            await exec.exec('git', ['add', filePath]);
+            
+            // Commit the changes
+            await exec.exec('git', ['commit', '-m', commitMessage]);
+            
+            // Push the new branch to the remote repository
+            await exec.exec('git', ['push', 'origin', newBranch]);
+            
+            // Create a pull request
+            await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              head: `${context.repo.owner}:${newBranch}`,
+              title: 'Update MicrosoftBuildVersion in analyzer template',
+              head: newBranch,
               base: baseBranch,
-              state: 'open',
+              body: '[Automated] Update the MicrosoftBuildVersion defaultValue in the template.json.',
             });
-          
-            if (pullRequests.length === 0) {
-              await createPullRequest();
-            } else {
-              core.info(`Pull request already exists for branch ${newBranch}`);
-            }
           } catch (error) {
             core.setFailed(`Failed to create and push branch: ${error.message}`);
           }
