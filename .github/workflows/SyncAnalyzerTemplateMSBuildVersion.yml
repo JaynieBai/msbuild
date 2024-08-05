@@ -64,7 +64,7 @@ jobs:
             Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
 
             # Set the versionPrefix and template filePath as an output
-            echo "versionPrefix=$versionPrefix" >> $GITHUB_ENV
+            echo "versionPrefix=17.8" >> $GITHUB_ENV
             echo "jsonFilePath=$jsonFilePath" >> $GITHUB_ENV
             Write-Output "Extracted VersionPrefix: $versionPrefix"
             Write-Output "Extracted VersionPrefix: $jsonFilePath"
