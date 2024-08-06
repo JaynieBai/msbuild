@@ -4,7 +4,7 @@
   <PropertyGroup>
     <VersionPrefix>17.19.0</VersionPrefix>
     <PackageValidationBaselineVersion>17.11.0-preview-24318-05</PackageValidationBaselineVersion>
-    <AssemblyVersion>15.1.0.0</AssemblyVersion>
+    <AssemblyVersion>15.1.0.0.0</AssemblyVersion>
     <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
     <DotNetUseShippingVersions>true</DotNetUseShippingVersions>
     <!-- Workaround for https://github.com/dotnet/roslyn/issues/35793 -->
