@@ -113,8 +113,8 @@ jobs:
               // Create and switch to the new branch
               await createAndSwitchBranch(newBranch);
           
-              // Check if the branch already exists on the remote
-              const shouldOpenPullRequest = await checkBranchExists(newBranch);
+              // Check if the branch PR already exists on the remote
+              const shouldOpenPullRequest = await checkBranchPRExists(newBranch,baseBranch);
           
               // Stage and commit the changes
               await stageAndCommitChanges(filePath, commitMessage);
@@ -142,12 +142,20 @@ jobs:
             await exec.exec('git', ['checkout', '-b', branch]);
           }
           
-          async function checkBranchExists(branch) {
-            try {
-              await exec.exec(`git ls-remote --exit-code --heads origin ${branch}`);
-              return false;
-            } catch {
+          async function checkBranchPRExists(newBranch,baseBranch) {
+            // Check if a pull request already exists
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: newBranch,
+              base: baseBranch,
+              state: 'open',
+            });
+          
+            if (pullRequests.length === 0) {
               return true;
+            } else {
+              return false;
             }
           }
           
