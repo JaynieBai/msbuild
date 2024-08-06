@@ -76,6 +76,7 @@ jobs:
 
             # Set the versionPrefix and template filePath as an output
             Add-Content -Path $env:GITHUB_ENV -Value "versionPrefix=$versionPrefix"
+            Add-Content -Path $env:GITHUB_ENV -Value "jsonFilePath=$jsonFilePath"
             Add-Content -Path $env:GITHUB_ENV -Value "updateNeeded=$updateNeeded"
             Write-Output "Extracted versionPrefix: $versionPrefix"
             Write-Output "Extracted jsonFilePath: $jsonFilePath"
