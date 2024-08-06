@@ -53,21 +53,33 @@ jobs:
             # Load the JSON template
             $jsonContent = Get-Content -Path $jsonFilePath -Raw | ConvertFrom-Json
 
-            # Update the defaultValue of MicrosoftBuildVersion in the JSON template
-            $jsonContent.symbols.MicrosoftBuildVersion.defaultValue = $versionPrefix
-
-            # Convert the JSON content back to a string
-            $jsonString = $jsonContent | ConvertTo-Json -Depth 10
-
-            # Write the updated JSON back to the file
-            Set-Content -Path $jsonFilePath -Value $jsonString
-            Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
+            # Check if the versionPrefix is different from the current defaultValue
+            if ($versionPrefix -ne $jsonContent.symbols.MicrosoftBuildVersion.defaultValue) {
+                # Update the defaultValue of MicrosoftBuildVersion in the JSON template
+                $jsonContent.symbols.MicrosoftBuildVersion.defaultValue = $versionPrefix
+        
+                # Convert the JSON content back to a string
+                $jsonString = $jsonContent | ConvertTo-Json -Depth 10
+        
+                # Write the updated JSON back to the file
+                Set-Content -Path $jsonFilePath -Value $jsonString
+                Write-Output "Updated MicrosoftBuildVersion to $versionPrefix"
+        
+                # Set the updateNeeded output variable to true
+                $updateNeeded = "true"
+            } else {
+                Write-Output "No update needed. MicrosoftBuildVersion is already $versionPrefix"
+        
+                # Set the updateNeeded output variable to false
+                $updateNeeded = "false"
+            }
 
             # Set the versionPrefix and template filePath as an output
             Add-Content -Path $env:GITHUB_ENV -Value "versionPrefix=$versionPrefix"
-            Add-Content -Path $env:GITHUB_ENV -Value "jsonFilePath=$jsonFilePath"
+            Add-Content -Path $env:GITHUB_ENV -Value "updateNeeded=$updateNeeded"
             Write-Output "Extracted versionPrefix: $versionPrefix"
             Write-Output "Extracted jsonFilePath: $jsonFilePath"
+            Write-Output "Update needed: $updateNeeded"
         }
         catch {
             Write-Error "An error occurred: $_"
@@ -79,6 +91,7 @@ jobs:
         echo "jsonFilePath: ${{ env.jsonFilePath }}"
     
     - name: Create Pull Request
+      if: env.updateNeeded == 'true'
       uses: actions/github-script@v7
       with:
         script: |
