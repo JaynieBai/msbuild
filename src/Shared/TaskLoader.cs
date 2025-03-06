@@ -181,6 +181,21 @@ namespace Microsoft.Build.Shared
         /// </summary>
         internal static Assembly AssemblyResolver(object sender, ResolveEventArgs args)
         {
+            if (s_resolverLoadedType != null)
+            {
+                throw new LoggerException("Resolver should not be called if we don't have a loaded type");
+            }
+
+            if (args.Name == null)
+            {
+                throw new LoggerException("The assembly name being resolved is null.");
+            }
+
+            if (s_resolverLoadedType.LoadedAssemblyName == null)
+            {
+                throw new LoggerException("The loaded assembly name is null.");
+            }
+
             if (args.Name.Equals(s_resolverLoadedType.LoadedAssemblyName.FullName, StringComparison.OrdinalIgnoreCase))
             {
                 return s_resolverLoadedType.LoadedAssembly ?? Assembly.Load(s_resolverLoadedType.Path);
